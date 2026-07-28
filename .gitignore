@@ -1,2 +1,15 @@
 __pycache__/
 *.pyc
+*.pyo
+.env
+*.env
+*.log
+backups/
+*.backup*
+*.before-*
+*.phase3-backup
+
+config.py
+.env
+*.pyc
+__pycache__/
