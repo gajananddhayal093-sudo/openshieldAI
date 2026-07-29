@@ -245,6 +245,61 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"❌ Report loading error:\n{error}"
         )
 
+
+async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        index = 1
+
+        if context.args:
+            try:
+                index = int(context.args[0])
+            except ValueError:
+                await update.message.reply_text(
+                    "❌ Usage: /reportinfo or /reportinfo 2"
+                )
+                return
+
+        if index < 1 or index > 10:
+            await update.message.reply_text(
+                "❌ Report number must be between 1 and 10."
+            )
+            return
+
+        saved = load_report(index)
+
+        if not saved:
+            await update.message.reply_text(
+                "📁 Report not found."
+            )
+            return
+
+        result = saved.get("result", {})
+        pipeline = result.get("pipeline", result)
+        risk = pipeline.get("risk", {})
+        findings = pipeline.get("findings", [])
+
+        lines = [
+            "🛡️ OPENSHIELD AI",
+            "📋 REPORT INFO",
+            "",
+            f"Type: {saved.get('report_type', 'SECURITY')}",
+            f"Target: {result.get('target', 'Unknown')}",
+            f"Generated: {saved.get('generated_at', 'Unknown')}",
+            "",
+            "📊 Risk",
+            f"{risk.get('risk', 'UNKNOWN')} — "
+            f"Score: {risk.get('score', 0)}/100",
+            "",
+            f"⚠️ Findings: {len(findings)}",
+        ]
+
+        await update.message.reply_text("\n".join(lines))
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Report info error:\n{error}"
+        )
+
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
@@ -256,6 +311,7 @@ def main():
     app.add_handler(CommandHandler("network", network))
     app.add_handler(CommandHandler("reports", reports))
     app.add_handler(CommandHandler("report", report))
+    app.add_handler(CommandHandler("reportinfo", reportinfo))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
