@@ -291,6 +291,10 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         risk = pipeline.get("risk", {})
         findings = pipeline.get("findings", [])
         summary = saved.get("summary", {})
+        correlation_summary = pipeline.get(
+            "correlation_summary",
+            "No related security findings detected."
+        )
 
         lines = [
             "🛡️ OPENSHIELD AI",
@@ -312,6 +316,9 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"• MEDIUM: {summary.get('severity_counts', {}).get('MEDIUM', 0)}",
             f"• HIGH: {summary.get('severity_counts', {}).get('HIGH', 0)}",
             f"• CRITICAL: {summary.get('severity_counts', {}).get('CRITICAL', 0)}",
+            "",
+            "🔗 Correlation",
+            correlation_summary,
         ]
 
         await update.message.reply_text("\n".join(lines))
