@@ -2,6 +2,7 @@ from modules.analyzer.dns_analyzer import analyze_dns
 from modules.analyzer.port_analyzer import analyze_ports
 from modules.analyzer.tls_analyzer import analyze_tls
 from modules.analyzer.security_pipeline import run_security_pipeline
+from modules.analyzer.report_writer import save_report
 
 
 def run_network_pipeline(host):
@@ -38,5 +39,10 @@ def run_network_pipeline(host):
     result["dns"] = dns
     result["ports"] = ports
     result["tls"] = tls
+
+    result["report_path"] = save_report(
+        result,
+        "NETWORK",
+    )
 
     return result

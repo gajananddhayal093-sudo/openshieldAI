@@ -13,3 +13,6 @@ config.py
 .env
 *.pyc
 __pycache__/
+
+# Generated security reports
+reports/*.json

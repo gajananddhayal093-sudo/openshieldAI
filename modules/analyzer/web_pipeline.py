@@ -1,5 +1,6 @@
 from modules.analyzer.url_analyzer import analyze_url
 from modules.analyzer.security_pipeline import run_security_pipeline
+from modules.analyzer.report_writer import save_report
 
 
 def run_web_pipeline(url):
@@ -60,8 +61,17 @@ def run_web_pipeline(url):
         findings,
     )
 
-    return {
+    final_result = {
         "target": url,
         "web": result,
         "pipeline": pipeline,
     }
+
+    report_path = save_report(
+        final_result,
+        "WEB",
+    )
+
+    final_result["report_path"] = report_path
+
+    return final_result
