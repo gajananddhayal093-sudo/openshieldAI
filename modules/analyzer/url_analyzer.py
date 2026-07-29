@@ -1,5 +1,10 @@
+import ipaddress
+import socket
+
 import requests
 from urllib.parse import urlparse
+
+MAX_RESPONSE_SIZE = 2 * 1024 * 1024  # 2 MB
 
 SECURITY_HEADERS = [
     "Strict-Transport-Security",
@@ -9,6 +14,49 @@ SECURITY_HEADERS = [
     "Referrer-Policy",
     "Permissions-Policy",
 ]
+
+def _is_unsafe_target(hostname):
+    if hostname.lower() == "localhost":
+        return True
+
+    try:
+        ip = ipaddress.ip_address(hostname)
+        return (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        )
+    except ValueError:
+        pass
+
+    try:
+        addresses = socket.getaddrinfo(
+            hostname,
+            None,
+            type=socket.SOCK_STREAM,
+        )
+
+        for address in addresses:
+            ip = ipaddress.ip_address(address[4][0])
+
+            if (
+                ip.is_private
+                or ip.is_loopback
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+                or ip.is_unspecified
+            ):
+                return True
+
+    except (socket.gaierror, ValueError):
+        return False
+
+    return False
+
 
 def analyze_url(url):
     if not url:
@@ -42,6 +90,15 @@ def analyze_url(url):
             "error": "Unsupported URL scheme. Use HTTP or HTTPS."
         }
 
+    if parsed.username is not None or parsed.password is not None:
+        return {
+            "url": url,
+            "domain": parsed.hostname,
+            "risk": "UNKNOWN",
+            "risk_score": 0,
+            "error": "URLs containing username or password are not allowed.",
+        }
+
     if not parsed.hostname:
         return {
             "url": url,
@@ -51,6 +108,16 @@ def analyze_url(url):
         }
 
     hostname = parsed.hostname
+
+    if _is_unsafe_target(hostname):
+        return {
+            "url": url,
+            "domain": hostname,
+            "risk": "UNKNOWN",
+            "risk_score": 0,
+            "error": "Local or private network targets are not allowed.",
+        }
+
 
     if (
         hostname.startswith(".")
@@ -102,11 +169,60 @@ def analyze_url(url):
         response = requests.get(
             url,
             timeout=8,
-            allow_redirects=True,
+            allow_redirects=False,
+            stream=True,
             headers={
                 "User-Agent": "OpenShieldAI-Security-Analyzer/2.0"
             },
         )
+
+        if response.is_redirect or response.is_permanent_redirect:
+            location = response.headers.get("Location", "")
+
+            if not location:
+                result["error"] = "Redirect target is missing."
+                result["risk"] = "UNKNOWN"
+                result["risk_score"] = 0
+                return result
+
+            redirected = urlparse(location)
+
+            if not redirected.scheme:
+                redirected = urlparse(
+                    requests.compat.urljoin(url, location)
+                )
+
+            if redirected.scheme not in ("http", "https"):
+                result["error"] = "Redirect target uses an unsupported scheme."
+                result["risk"] = "UNKNOWN"
+                result["risk_score"] = 0
+                return result
+
+            if not redirected.hostname:
+                result["error"] = "Redirect target has an invalid hostname."
+                result["risk"] = "UNKNOWN"
+                result["risk_score"] = 0
+                return result
+
+            if _is_unsafe_target(redirected.hostname):
+                response.close()
+                result["error"] = (
+                    "Redirect target points to a local or private network."
+                )
+                result["risk"] = "UNKNOWN"
+                result["risk_score"] = 0
+                return result
+
+            response.close()
+
+            response = requests.get(
+                requests.compat.urljoin(url, location),
+                timeout=8,
+                allow_redirects=False,
+                headers={
+                    "User-Agent": "OpenShieldAI-Security-Analyzer/2.0"
+                },
+            )
 
         result["status"] = response.status_code
         result["status_text"] = response.reason
@@ -120,6 +236,20 @@ def analyze_url(url):
             }
             for r in response.history
         ]
+
+        content_length = response.headers.get("Content-Length")
+
+        if content_length:
+            try:
+                if int(content_length) > MAX_RESPONSE_SIZE:
+                    result["error"] = (
+                        "Response exceeds the maximum allowed size."
+                    )
+                    result["risk"] = "UNKNOWN"
+                    result["risk_score"] = 0
+                    return result
+            except ValueError:
+                pass
 
         response_headers = {
             key.lower(): value
@@ -170,6 +300,8 @@ def analyze_url(url):
             result["cookie_flags"]["samesite"] += int(
                 samesite.lower() != "not set"
             )
+
+        response.close()
 
         findings = []
 
