@@ -52,3 +52,54 @@ def load_report(index=1):
     return json.loads(
         report_path.read_text(encoding="utf-8")
     )
+
+def get_report_stats(limit=50):
+    reports = list_reports(limit)
+
+    stats = {
+        "total": 0,
+        "web": 0,
+        "network": 0,
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "critical": 0,
+        "findings": 0,
+    }
+
+    for report in reports:
+        try:
+            data = json.loads(
+                Path(report).read_text(encoding="utf-8")
+            )
+
+            stats["total"] += 1
+
+            report_type = data.get(
+                "report_type", ""
+            ).lower()
+
+            if report_type == "web":
+                stats["web"] += 1
+            elif report_type == "network":
+                stats["network"] += 1
+
+            result = data.get("result", {})
+            pipeline = result.get("pipeline", result)
+            risk = pipeline.get("risk", {})
+
+            level = str(
+                risk.get("risk", "")
+            ).lower()
+
+            if level in stats:
+                stats[level] += 1
+
+            stats["findings"] += len(
+                pipeline.get("findings", [])
+            )
+
+        except (OSError, json.JSONDecodeError):
+            continue
+
+    return stats

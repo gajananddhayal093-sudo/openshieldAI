@@ -23,7 +23,7 @@ from modules.analyzer.tls_analyzer import analyze_tls
 from modules.analyzer.network_risk import assess_network_risk
 from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
-from modules.analyzer.report_writer import list_reports, load_report
+from modules.analyzer.report_writer import list_reports, load_report, get_report_stats
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -300,6 +300,37 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"❌ Report info error:\n{error}"
         )
 
+
+async def reportstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        stats = get_report_stats()
+
+        lines = [
+            "🛡️ OPENSHIELD AI",
+            "📊 REPORT STATISTICS",
+            "",
+            f"Total Reports: {stats['total']}",
+            "",
+            "📁 Types",
+            f"• Web: {stats['web']}",
+            f"• Network: {stats['network']}",
+            "",
+            "⚠️ Risk Levels",
+            f"• LOW: {stats['low']}",
+            f"• MEDIUM: {stats['medium']}",
+            f"• HIGH: {stats['high']}",
+            f"• CRITICAL: {stats['critical']}",
+            "",
+            f"🔎 Total Findings: {stats['findings']}",
+        ]
+
+        await update.message.reply_text("\n".join(lines))
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Report statistics error:\n{error}"
+        )
+
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
@@ -312,6 +343,7 @@ def main():
     app.add_handler(CommandHandler("reports", reports))
     app.add_handler(CommandHandler("report", report))
     app.add_handler(CommandHandler("reportinfo", reportinfo))
+    app.add_handler(CommandHandler("reportstats", reportstats))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
