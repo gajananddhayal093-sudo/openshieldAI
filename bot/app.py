@@ -23,6 +23,7 @@ from modules.analyzer.tls_analyzer import analyze_tls
 from modules.analyzer.network_risk import assess_network_risk
 from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
+from modules.analyzer.report_writer import list_reports
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -174,6 +175,33 @@ async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+async def reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        report_files = list_reports(10)
+
+        if not report_files:
+            await update.message.reply_text(
+                "📁 No saved security reports."
+            )
+            return
+
+        lines = [
+            "🛡️ OPENSHIELD AI",
+            "📁 RECENT SECURITY REPORTS",
+            "",
+        ]
+
+        for report in report_files:
+            lines.append(f"• {report}")
+
+        await update.message.reply_text("\n".join(lines))
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Report listing error:\n{error}"
+        )
+
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
@@ -183,6 +211,7 @@ def main():
     app.add_handler(CommandHandler("security", security))
     app.add_handler(CommandHandler("analyze", analyze))
     app.add_handler(CommandHandler("network", network))
+    app.add_handler(CommandHandler("reports", reports))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()

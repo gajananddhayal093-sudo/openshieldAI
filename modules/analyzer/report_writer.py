@@ -29,3 +29,14 @@ def save_report(result, report_type="SECURITY"):
     )
 
     return str(path)
+
+def list_reports(limit=10):
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+    reports = sorted(
+        REPORT_DIR.glob("*.json"),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+
+    return [str(report) for report in reports[:limit]]
