@@ -37,19 +37,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📚 OpenShield AI Commands\n\n"
+        "🔰 General\n"
         "/start - Start the bot\n"
         "/help - Show commands\n"
-        "/about - About OpenShield AI\n"
+        "/about - About OpenShield AI\n\n"
+        "🔎 Security Analysis\n"
         "/security - Security tools\n"
-        "/analyze <URL> - Analyze a website"
+        "/analyze <URL> - Analyze a website\n"
+        "/network <host> - Analyze network security\n\n"
+        "📁 Reports\n"
+        "/reports - List recent reports\n"
+        "/report <number> - View a saved report\n"
+        "/reportinfo <number> - Report summary\n"
+        "/reportstats - Report statistics"
     )
 
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🛡️ OpenShield AI\n\n"
-        "Defensive cybersecurity platform\n"
-        "Version 2.0 — Phase 3"
+        "Defensive Cybersecurity Analysis Platform\n"
+        "Version 3.0\n\n"
+        "🔎 Web & Network Security Analysis\n"
+        "📊 Risk Assessment & Security Reports\n"
+        "📁 Persistent Report Storage\n"
+        "🛡️ URL Security Hardening\n"
+        "🤖 Telegram Security Assistant"
     )
 
 
