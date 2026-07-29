@@ -277,6 +277,7 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pipeline = result.get("pipeline", result)
         risk = pipeline.get("risk", {})
         findings = pipeline.get("findings", [])
+        summary = saved.get("summary", {})
 
         lines = [
             "🛡️ OPENSHIELD AI",
@@ -290,7 +291,14 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{risk.get('risk', 'UNKNOWN')} — "
             f"Score: {risk.get('score', 0)}/100",
             "",
-            f"⚠️ Findings: {len(findings)}",
+            f"⚠️ Findings: {summary.get('findings_count', len(findings))}",
+            f"Highest Severity: {summary.get('highest_severity', risk.get('highest_severity', 'None'))}",
+            "",
+            "📊 Severity Breakdown",
+            f"• LOW: {summary.get('severity_counts', {}).get('LOW', 0)}",
+            f"• MEDIUM: {summary.get('severity_counts', {}).get('MEDIUM', 0)}",
+            f"• HIGH: {summary.get('severity_counts', {}).get('HIGH', 0)}",
+            f"• CRITICAL: {summary.get('severity_counts', {}).get('CRITICAL', 0)}",
         ]
 
         await update.message.reply_text("\n".join(lines))
@@ -320,6 +328,14 @@ async def reportstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"• MEDIUM: {stats['medium']}",
             f"• HIGH: {stats['high']}",
             f"• CRITICAL: {stats['critical']}",
+            "",
+            f"📈 Average Risk Score: {stats['average_score']}/100",
+            "",
+            "📊 Severity Distribution",
+            f"• LOW: {stats['severity_percentages']['LOW']}%",
+            f"• MEDIUM: {stats['severity_percentages']['MEDIUM']}%",
+            f"• HIGH: {stats['severity_percentages']['HIGH']}%",
+            f"• CRITICAL: {stats['severity_percentages']['CRITICAL']}%",
             "",
             f"🔎 Total Findings: {stats['findings']}",
         ]
