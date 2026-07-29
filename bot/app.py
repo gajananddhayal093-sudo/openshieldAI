@@ -119,10 +119,14 @@ async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         result = run_network_pipeline(host)
 
-        dns = result["dns"]
-        ports = result["ports"]
-        tls = result["tls"]
-        risk = result["risk"]
+        report = format_telegram_report(
+            result,
+            "NETWORK"
+        )
+
+        dns = result.get("dns", {})
+        ports = result.get("ports", {})
+        tls = result.get("tls", {})
 
         addresses = dns.get("addresses", [])
 
@@ -132,22 +136,21 @@ async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
 
         lines = [
-            "🛡️ OPENSHIELD AI",
-            "NETWORK SECURITY REPORT",
+            report,
             "",
-            "🌐 Host",
-            host,
+            "📡 NETWORK DETAILS",
             "",
-            "📡 DNS",
+            "DNS",
             "✅ Resolved" if addresses else "❌ Resolution failed",
             "",
-            "🚪 Ports",
+            "🚪 Tested Ports",
         ]
 
         if open_ports:
             for item in open_ports:
                 lines.append(
-                    f"✅ {item['port']} — {item['service']}"
+                    f"✅ {item.get('port')} — "
+                    f"{item.get('service', 'unknown')}"
                 )
         else:
             lines.append("No tested ports reported open.")
@@ -160,37 +163,8 @@ async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"{tls.get('days_remaining')} days remaining"
             )
             if tls.get("valid")
-            else "❌ TLS validation failed",
-            "",
-            "📊 Risk Assessment",
-            f"{risk['risk']} — Score: {risk['score']}/100",
-            "",
-            "⚠️ Findings",
+            else "❌ TLS validation failed"
         ])
-
-        if result["findings"]:
-            for finding in result["findings"]:
-                lines.append(
-                    f"• [{finding['severity']}] "
-                    f"{finding['title']}"
-                )
-        else:
-            lines.append("• No findings.")
-
-        lines.extend([
-            "",
-            "💡 Recommendations",
-        ])
-
-        if result["recommendations"]:
-            for item in result["recommendations"]:
-                recommendation = item.get(
-                    "recommendation",
-                    str(item)
-                )
-                lines.append(f"• {recommendation}")
-        else:
-            lines.append("• No recommendations.")
 
         await update.message.reply_text("\n".join(lines))
 
@@ -198,6 +172,7 @@ async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"❌ Network analyzer error:\n{error}"
         )
+
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
