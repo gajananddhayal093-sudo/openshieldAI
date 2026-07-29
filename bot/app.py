@@ -23,7 +23,7 @@ from modules.analyzer.tls_analyzer import analyze_tls
 from modules.analyzer.network_risk import assess_network_risk
 from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
-from modules.analyzer.report_writer import list_reports
+from modules.analyzer.report_writer import list_reports, load_report
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -202,6 +202,49 @@ async def reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"❌ Report listing error:\n{error}"
         )
 
+
+async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        index = 1
+
+        if context.args:
+            try:
+                index = int(context.args[0])
+            except ValueError:
+                await update.message.reply_text(
+                    "❌ Usage: /report or /report 2"
+                )
+                return
+
+        if index < 1 or index > 10:
+            await update.message.reply_text(
+                "❌ Report number must be between 1 and 10."
+            )
+            return
+
+        saved = load_report(index)
+
+        if not saved:
+            await update.message.reply_text(
+                "📁 Report not found."
+            )
+            return
+
+        result = saved.get("result", {})
+        report_type = saved.get("report_type", "SECURITY")
+
+        message = format_telegram_report(
+            result.get("pipeline", result),
+            report_type,
+        )
+
+        await update.message.reply_text(message)
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Report loading error:\n{error}"
+        )
+
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
@@ -212,6 +255,7 @@ def main():
     app.add_handler(CommandHandler("analyze", analyze))
     app.add_handler(CommandHandler("network", network))
     app.add_handler(CommandHandler("reports", reports))
+    app.add_handler(CommandHandler("report", report))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()

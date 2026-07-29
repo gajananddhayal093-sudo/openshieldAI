@@ -40,3 +40,15 @@ def list_reports(limit=10):
     )
 
     return [str(report) for report in reports[:limit]]
+
+def load_report(index=1):
+    reports = list_reports(index)
+
+    if len(reports) < index:
+        return None
+
+    report_path = Path(reports[index - 1])
+
+    return json.loads(
+        report_path.read_text(encoding="utf-8")
+    )
