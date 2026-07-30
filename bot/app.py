@@ -24,6 +24,7 @@ from modules.analyzer.network_risk import assess_network_risk
 from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
 from modules.analyzer.report_writer import list_reports, load_report, get_report_stats, verify_report
+from modules.analyzer.report_search import search_reports
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -403,6 +404,42 @@ async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        if not context.args:
+            await update.message.reply_text(
+                "Usage: /search <keyword>"
+            )
+            return
+
+        keyword = " ".join(context.args)
+
+        results = search_reports(keyword)
+
+        if not results:
+            await update.message.reply_text(
+                f"🔎 No reports found for: {keyword}"
+            )
+            return
+
+        message = (
+            "🔎 OpenShield AI Search\n\n"
+            f"Keyword: {keyword}\n"
+            f"Found: {len(results)} report(s)\n\n"
+        )
+
+        for item in results[:5]:
+            message += f"📄 {item}\n"
+
+        await update.message.reply_text(message)
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Search error: {error}"
+        )
+
+
+
 async def reportstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         stats = get_report_stats()
@@ -456,6 +493,7 @@ def main():
     app.add_handler(CommandHandler("reportstats", reportstats))
     app.add_handler(CommandHandler("verify", verify))
     app.add_handler(CommandHandler("dashboard", dashboard))
+    app.add_handler(CommandHandler("search", search))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
