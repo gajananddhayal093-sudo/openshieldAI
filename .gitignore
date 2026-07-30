@@ -22,3 +22,7 @@ reports/*.pdf
 
 # Generated HTML reports
 reports/*.html
+
+# Database files
+database/*.db
+database/__pycache__/
