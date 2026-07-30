@@ -16,3 +16,6 @@ __pycache__/
 
 # Generated security reports
 reports/*.json
+
+# Generated PDF reports
+reports/*.pdf
