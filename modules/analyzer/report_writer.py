@@ -1,4 +1,5 @@
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from reportlab.lib.styles import getSampleStyleSheet
@@ -57,6 +58,14 @@ def save_report(result, report_type="SECURITY"):
         "summary": build_report_summary(result),
         "result": result,
     }
+
+    report_data = json.dumps(payload, indent=2, ensure_ascii=False)
+
+    report_hash = hashlib.sha256(
+        report_data.encode("utf-8")
+    ).hexdigest()
+
+    payload["sha256"] = report_hash
 
     path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False),
