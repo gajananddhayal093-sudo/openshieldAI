@@ -239,3 +239,51 @@ def get_report_stats(limit=50):
             )
 
     return stats
+
+
+def verify_report(report_path):
+    path = Path(report_path)
+
+    if not path.exists():
+        return {
+            "valid": False,
+            "error": "Report not found"
+        }
+
+    try:
+        data = json.loads(
+            path.read_text(encoding="utf-8")
+        )
+
+        stored_hash = data.get("sha256")
+
+        if not stored_hash:
+            return {
+                "valid": False,
+                "error": "SHA-256 hash missing"
+            }
+
+        data_without_hash = dict(data)
+        data_without_hash.pop("sha256", None)
+
+        report_data = json.dumps(
+            data_without_hash,
+            indent=2,
+            ensure_ascii=False
+        )
+
+        current_hash = hashlib.sha256(
+            report_data.encode("utf-8")
+        ).hexdigest()
+
+        return {
+            "valid": stored_hash == current_hash,
+            "stored_hash": stored_hash,
+            "current_hash": current_hash
+        }
+
+    except Exception as e:
+        return {
+            "valid": False,
+            "error": str(e)
+        }
