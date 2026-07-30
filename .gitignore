@@ -19,3 +19,6 @@ reports/*.json
 
 # Generated PDF reports
 reports/*.pdf
+
+# Generated HTML reports
+reports/*.html

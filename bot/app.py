@@ -23,7 +23,7 @@ from modules.analyzer.tls_analyzer import analyze_tls
 from modules.analyzer.network_risk import assess_network_risk
 from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
-from modules.analyzer.report_writer import list_reports, load_report, get_report_stats
+from modules.analyzer.report_writer import list_reports, load_report, get_report_stats, verify_report
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -329,6 +329,48 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: /verify <report_number>"
+        )
+        return
+
+    try:
+        index = int(context.args[0])
+        reports = list_reports(index)
+
+        if len(reports) < index:
+            await update.message.reply_text(
+                "❌ Report not found"
+            )
+            return
+
+        result = verify_report(reports[index - 1])
+
+        if result.get("valid"):
+            message = (
+                "🛡️ Report Verification\n\n"
+                "Status: VALID ✅\n"
+                "SHA-256: MATCHED\n"
+                "Integrity: OK"
+            )
+        else:
+            message = (
+                "⚠️ Report Verification\n\n"
+                "Status: FAILED ❌\n"
+                f"Reason: {result.get('error', 'Hash mismatch')}"
+            )
+
+        await update.message.reply_text(message)
+
+    except ValueError:
+        await update.message.reply_text(
+            "❌ Use a valid report number"
+        )
+
+
 async def reportstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         stats = get_report_stats()
@@ -380,6 +422,7 @@ def main():
     app.add_handler(CommandHandler("report", report))
     app.add_handler(CommandHandler("reportinfo", reportinfo))
     app.add_handler(CommandHandler("reportstats", reportstats))
+    app.add_handler(CommandHandler("verify", verify))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
