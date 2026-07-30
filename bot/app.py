@@ -93,6 +93,15 @@ async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
         web = result["web"]
         pipeline = result["pipeline"]
 
+        from database.scan_history import save_scan
+
+        save_scan(
+            url,
+            "WEB",
+            pipeline["risk"]["risk"],
+            pipeline["risk"]["score"]
+        )
+
         report = format_telegram_report(
             pipeline,
             "WEB"
