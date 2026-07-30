@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph
+from modules.analyzer.intelligence import generate_intelligence
 
 
 
@@ -56,6 +57,9 @@ def save_report(result, report_type="SECURITY"):
         "report_type": report_type.upper(),
         "generated_at": timestamp.isoformat(),
         "summary": build_report_summary(result),
+        "intelligence": generate_intelligence(
+            build_report_summary(result)
+        ),
         "result": result,
     }
 
