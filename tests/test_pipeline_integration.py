@@ -7,8 +7,14 @@ from modules.analyzer.network_pipeline import run_network_pipeline
 
 class TestWebPipeline(unittest.TestCase):
 
+    @patch("modules.analyzer.web_pipeline.analyze_tls")
     @patch("modules.analyzer.web_pipeline.analyze_url")
-    def test_web_pipeline(self, mock_analyze):
+    def test_web_pipeline(self, mock_analyze, mock_tls):
+
+        mock_tls.return_value = {
+            "valid": True,
+            "days_remaining": 365,
+        }
         mock_analyze.return_value = {
             "url": "https://test.local",
             "https": True,

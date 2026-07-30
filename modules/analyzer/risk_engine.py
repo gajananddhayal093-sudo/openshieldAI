@@ -1,90 +1,47 @@
-from modules.analyzer.severity import severity_rank
-
-
-RISK_LEVELS = (
-    (80, "CRITICAL"),
-    (60, "HIGH"),
-    (30, "HIGH"),
-    (15, "MEDIUM"),
-    (1, "LOW"),
-    (0, "LOW"),
-)
-
-
 def calculate_risk(findings):
-    if not findings:
-        return {
-            "score": 0,
-            "risk": "LOW",
-            "findings_count": 0,
-        }
-
-    weights = {
-        "INFO": 0,
-        "LOW": 5,
-        "MEDIUM": 15,
-        "HIGH": 30,
-        "CRITICAL": 50,
-    }
-
-    raw_score = sum(
-        weights.get(
-            finding.get("severity", "INFO").upper(),
-            0,
-        )
-        for finding in findings
+    missing = sum(
+        1 for item in findings
+        if item.get("status") == "missing"
     )
 
-    # Keep the public score within 0–100.
-    score = min(raw_score, 100)
+    score = 0
 
-    risk = "LOW"
+    for item in findings:
+        severity = str(item.get("severity", "")).upper()
 
-    for minimum, level in RISK_LEVELS:
-        if score >= minimum:
-            risk = level
-            break
+        if severity == "CRITICAL":
+            score += 40
+        elif severity == "HIGH":
+            score += 30
+        elif severity == "MEDIUM":
+            score += 20
+        elif severity == "LOW":
+            score += 10
 
-    highest = max(
-        (
-            severity_rank(
-                finding.get("severity", "INFO")
-            )
-            for finding in findings
-        ),
-        default=0,
-    )
+    score = min(score, 100)
 
-    severity_levels = {
-        0: "LOW",
-        1: "LOW",
-        2: "MEDIUM",
-        3: "HIGH",
-        4: "CRITICAL",
-    }
+    if score >= 80:
+        risk = "CRITICAL"
+    elif score >= 60:
+        risk = "HIGH"
+    elif score >= 30:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
 
-    highest_name = severity_levels[highest]
+    severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
-    # Highest finding severity sets the minimum overall risk.
-    risk_order = {
-        "LOW": 0,
-        "MEDIUM": 1,
-        "HIGH": 2,
-        "CRITICAL": 3,
-    }
-
-    if risk_order[highest_name] > risk_order[risk]:
-        risk = highest_name
+    highest = None
+    for item in findings:
+        sev = str(item.get("severity", "")).upper()
+        if sev in severities:
+            if highest is None or severities.index(sev) > severities.index(highest):
+                highest = sev
 
     return {
-        "score": score,
         "risk": risk,
-        "findings_count": len(findings),
-        "highest_severity": (
-            "CRITICAL" if highest == 4 else
-            "HIGH" if highest == 3 else
-            "MEDIUM" if highest == 2 else
-            "LOW" if highest == 1 else
-            "INFO"
-        ),
+        "score": score,
+        "missing_headers": missing,
+        "findings": len(findings),
+        "highest_severity": highest,
     }

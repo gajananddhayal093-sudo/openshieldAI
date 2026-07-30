@@ -1,10 +1,12 @@
 from modules.analyzer.url_analyzer import analyze_url
 from modules.analyzer.security_pipeline import run_security_pipeline
 from modules.analyzer.report_writer import save_report
+from modules.analyzer.tls_analyzer import analyze_tls
 
 
 def run_web_pipeline(url):
     result = analyze_url(url)
+    tls = analyze_tls(result.get("domain", ""))
 
     if result.get("error"):
         return {
@@ -56,6 +58,23 @@ def run_web_pipeline(url):
                 "severity": "MEDIUM",
             })
 
+
+    if not tls.get("valid", False):
+        findings.append({
+            "title": "TLS certificate validation failed",
+            "key": "TLS",
+            "severity": "HIGH",
+        })
+    elif (
+        tls.get("days_remaining") is not None
+        and tls["days_remaining"] < 30
+    ):
+        findings.append({
+            "title": "TLS certificate expires within 30 days",
+            "key": "TLS Expiry",
+            "severity": "MEDIUM",
+        })
+
     pipeline = run_security_pipeline(
         url,
         findings,
@@ -64,6 +83,7 @@ def run_web_pipeline(url):
     final_result = {
         "target": url,
         "web": result,
+        "tls": tls,
         "pipeline": pipeline,
     }
 
