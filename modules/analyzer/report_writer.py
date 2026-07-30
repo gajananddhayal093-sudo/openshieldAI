@@ -77,6 +77,11 @@ def save_report(result, report_type="SECURITY"):
     except Exception as e:
         print(f"PDF generation failed: {e}")
 
+    try:
+        generate_html_report(payload, path.with_suffix(".html"))
+    except Exception as e:
+        print(f"HTML generation failed: {e}")
+
     return str(path)
 
 
@@ -96,6 +101,39 @@ def generate_pdf_report(payload, pdf_path):
     story.append(Paragraph(f"Findings: {summary.get('findings_count', 0)}", styles["BodyText"]))
 
     doc.build(story)
+
+
+
+def generate_html_report(payload, html_path):
+    summary = payload.get("summary", {})
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<title>OpenShield AI Security Report</title>
+<meta charset="utf-8">
+</head>
+<body>
+<h1>🛡️ OpenShield AI Security Report</h1>
+
+<h2>Report Information</h2>
+<p>Type: {payload.get("report_type", "UNKNOWN")}</p>
+<p>Generated: {payload.get("generated_at", "")}</p>
+
+<h2>Risk Assessment</h2>
+<p>Risk: {summary.get("risk", "UNKNOWN")}</p>
+<p>Score: {summary.get("score", 0)}/100</p>
+<p>Findings: {summary.get("findings_count", 0)}</p>
+
+<h2>SHA-256 Integrity</h2>
+<p>{payload.get("sha256", "Not available")}</p>
+
+</body>
+</html>
+"""
+
+    html_path.write_text(html, encoding="utf-8")
 
 
 def list_reports(limit=10):
