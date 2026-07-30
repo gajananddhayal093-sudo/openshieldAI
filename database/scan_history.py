@@ -46,3 +46,21 @@ def save_scan(target, scan_type, risk, score):
 
     conn.commit()
     conn.close()
+
+
+def get_history(limit=10):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT id, target, scan_type, risk, score, created_at
+    FROM scans
+    ORDER BY id DESC
+    LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
