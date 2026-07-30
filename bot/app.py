@@ -251,6 +251,17 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             report_type,
         )
 
+        intelligence = saved.get("intelligence", {})
+
+        if intelligence:
+            message += (
+                "\n\n🧠 Intelligence"
+                "\n"
+                f"Analysis: {intelligence.get('analysis', '')}"
+                "\n"
+                f"Priority: {intelligence.get('priority', '')}"
+            )
+
         await update.message.reply_text(message)
 
     except Exception as error:
