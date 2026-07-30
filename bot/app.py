@@ -25,6 +25,7 @@ from modules.analyzer.network_pipeline import run_network_pipeline
 from modules.analyzer.telegram_report import format_telegram_report
 from modules.analyzer.report_writer import list_reports, load_report, get_report_stats, verify_report
 from modules.analyzer.report_search import search_reports
+from modules.analyzer.report_export import export_report
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -440,6 +441,43 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
+async def export(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        index = 1
+
+        if context.args:
+            index = int(context.args[0])
+
+        reports = list_reports(index)
+
+        if len(reports) < index:
+            await update.message.reply_text(
+                "📁 Report not found."
+            )
+            return
+
+        zip_file = export_report(
+            reports[index - 1]
+        )
+
+        if not zip_file:
+            await update.message.reply_text(
+                "❌ Export failed."
+            )
+            return
+
+        await update.message.reply_document(
+            document=open(zip_file, "rb"),
+            caption="📦 OpenShield AI Report Export"
+        )
+
+    except Exception as error:
+        await update.message.reply_text(
+            f"❌ Export error: {error}"
+        )
+
+
+
 async def reportstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         stats = get_report_stats()
@@ -494,6 +532,7 @@ def main():
     app.add_handler(CommandHandler("verify", verify))
     app.add_handler(CommandHandler("dashboard", dashboard))
     app.add_handler(CommandHandler("search", search))
+    app.add_handler(CommandHandler("export", export))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
