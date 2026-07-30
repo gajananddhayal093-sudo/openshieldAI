@@ -330,6 +330,27 @@ async def reportinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
+
+async def dashboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    stats = get_report_stats(50)
+
+    message = (
+        "📊 OPENSHIELD AI DASHBOARD\n\n"
+        f"📁 Total Reports: {stats.get('total', 0)}\n"
+        f"🌐 Web Reports: {stats.get('web', 0)}\n"
+        f"📡 Network Reports: {stats.get('network', 0)}\n\n"
+        "⚠️ Risk Summary\n"
+        f"🟢 Low: {stats.get('low', 0)}\n"
+        f"🟡 Medium: {stats.get('medium', 0)}\n"
+        f"🔴 High: {stats.get('high', 0)}\n"
+        f"🚨 Critical: {stats.get('critical', 0)}\n\n"
+        f"📈 Average Score: {stats.get('average_score', 0)}/100\n"
+        f"🔎 Findings: {stats.get('findings', 0)}"
+    )
+
+    await update.message.reply_text(message)
+
+
 async def verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text(
@@ -423,6 +444,7 @@ def main():
     app.add_handler(CommandHandler("reportinfo", reportinfo))
     app.add_handler(CommandHandler("reportstats", reportstats))
     app.add_handler(CommandHandler("verify", verify))
+    app.add_handler(CommandHandler("dashboard", dashboard))
 
     print("🛡️ OpenShield AI Bot Running...")
     app.run_polling()
