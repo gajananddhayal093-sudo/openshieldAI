@@ -1,6 +1,9 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+
 
 
 REPORT_DIR = Path("reports")
@@ -60,7 +63,31 @@ def save_report(result, report_type="SECURITY"):
         encoding="utf-8",
     )
 
+    try:
+        generate_pdf_report(payload, path.with_suffix(".pdf"))
+    except Exception as e:
+        print(f"PDF generation failed: {e}")
+
     return str(path)
+
+
+def generate_pdf_report(payload, pdf_path):
+    styles = getSampleStyleSheet()
+    doc = SimpleDocTemplate(str(pdf_path))
+
+    story = [
+        Paragraph("<b>OpenShield AI Security Report</b>", styles["Heading1"]),
+        Paragraph(f"Report Type: {payload.get('report_type', 'UNKNOWN')}", styles["BodyText"]),
+        Paragraph(f"Generated: {payload.get('generated_at', '')}", styles["BodyText"]),
+    ]
+
+    summary = payload.get("summary", {})
+    story.append(Paragraph(f"Risk: {summary.get('risk', 'UNKNOWN')}", styles["BodyText"]))
+    story.append(Paragraph(f"Score: {summary.get('score', 0)}", styles["BodyText"]))
+    story.append(Paragraph(f"Findings: {summary.get('findings_count', 0)}", styles["BodyText"]))
+
+    doc.build(story)
+
 
 def list_reports(limit=10):
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
