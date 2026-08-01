@@ -15,6 +15,7 @@ from telegram.ext import (
 )
 
 from config import BOT_TOKEN
+from modules.ai.assistant import analyze_security_report
 from modules.security import generate_password
 from modules.analyzer.url_analyzer import analyze_url
 from modules.analyzer.dns_analyzer import analyze_dns
@@ -260,6 +261,15 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = format_telegram_report(
             result.get("pipeline", result),
             report_type,
+        )
+
+        ai_analysis = analyze_security_report(
+            result.get("pipeline", result)
+        )
+
+        message += (
+            "\n\n🤖 AI Assistant\n"
+            + ai_analysis
         )
 
         intelligence = saved.get("intelligence", {})

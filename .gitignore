@@ -9,7 +9,6 @@ backups/
 *.before-*
 *.phase3-backup
 
-config.py
 .env
 *.pyc
 __pycache__/
