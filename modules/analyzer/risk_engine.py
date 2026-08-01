@@ -10,21 +10,21 @@ def calculate_risk(findings):
         severity = str(item.get("severity", "")).upper()
 
         if severity == "CRITICAL":
-            score += 40
+            score += 50
         elif severity == "HIGH":
-            score += 30
+            score += 25
         elif severity == "MEDIUM":
-            score += 20
-        elif severity == "LOW":
             score += 10
+        elif severity == "LOW":
+            score += 5
 
     score = min(score, 100)
 
-    if score >= 80:
+    if score >= 70:
         risk = "CRITICAL"
-    elif score >= 60:
+    elif score >= 40:
         risk = "HIGH"
-    elif score >= 30:
+    elif score >= 15:
         risk = "MEDIUM"
     else:
         risk = "LOW"
@@ -37,6 +37,9 @@ def calculate_risk(findings):
         if sev in severities:
             if highest is None or severities.index(sev) > severities.index(highest):
                 highest = sev
+
+    if highest in ("LOW", "MEDIUM", "HIGH", "CRITICAL"):
+        risk = highest
 
     return {
         "risk": risk,
