@@ -16,6 +16,7 @@ from telegram.ext import (
 
 from config import BOT_TOKEN
 from modules.ai.assistant import analyze_security_report
+from modules.ai.chat import ask_security_ai
 from modules.security import generate_password
 from modules.analyzer.url_analyzer import analyze_url
 from modules.analyzer.dns_analyzer import analyze_dns
@@ -34,6 +35,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🛡️ OpenShield AI\n\n"
         "Cybersecurity assistant is online.\n\n"
         "Use /help to see available commands."
+    )
+
+
+async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    question = " ".join(context.args)
+
+    if not question:
+        await update.message.reply_text(
+            "❌ Usage: /ask your question"
+        )
+        return
+
+    answer = ask_security_ai(question)
+
+    await update.message.reply_text(
+        "🧠 OpenShield AI\n\n" + answer
     )
 
 
@@ -540,6 +557,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("ask", ask))
     app.add_handler(CommandHandler("about", about))
     app.add_handler(CommandHandler("security", security))
     app.add_handler(CommandHandler("analyze", analyze))
