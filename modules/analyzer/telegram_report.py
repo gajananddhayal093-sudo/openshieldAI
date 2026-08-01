@@ -1,13 +1,24 @@
+from modules.analyzer.intelligence import generate_intelligence
+
 def format_telegram_report(result, report_type="SECURITY"):
     risk = result.get("risk", {})
     findings = result.get("findings", [])
     recommendations = result.get("recommendations", [])
 
+    summary = {
+        "risk": risk.get("risk", "LOW"),
+        "score": risk.get("score", 0),
+        "findings_count": len(findings),
+        "highest_severity": risk.get("highest_severity"),
+    }
+
+    intelligence = generate_intelligence(summary)
+
     lines = [
         "🛡️ OPENSHIELD AI",
         f"{report_type} SECURITY REPORT",
         "",
-        f"🎯 Target",
+        "🎯 Target",
         str(result.get("target", "Unknown")),
         "",
         "📊 Risk Assessment",
@@ -32,12 +43,32 @@ def format_telegram_report(result, report_type="SECURITY"):
 
     if recommendations:
         for item in recommendations:
-            if isinstance(item, dict):
-                text = item.get("recommendation", str(item))
-            else:
-                text = str(item)
+            text = item.get("recommendation", str(item)) if isinstance(item, dict) else str(item)
             lines.append(f"• {text}")
     else:
         lines.append("• No recommendations.")
+
+    correlation = result.get("correlation_summary")
+
+    if correlation:
+        lines.extend([
+            "",
+            "🔗 Correlation",
+            correlation,
+        ])
+
+    if intelligence:
+        lines.extend([
+            "",
+            "🧠 Intelligence",
+            f"Analysis: {intelligence.get('analysis', '')}",
+            f"Priority: {intelligence.get('priority', '')}",
+        ])
+
+        steps = intelligence.get("next_steps", [])
+        if steps:
+            lines.append("Next Steps:")
+            for step in steps:
+                lines.append(f"• {step}")
 
     return "\n".join(lines)
