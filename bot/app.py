@@ -17,6 +17,8 @@ from telegram.ext import (
 from config import BOT_TOKEN
 from modules.ai.assistant import analyze_security_report
 from modules.ai.chat import ask_security_ai
+from modules.analyzer.compare import compare_scans
+from modules.ai.comparison import analyze_scan_changes
 from modules.security import generate_password
 from modules.analyzer.url_analyzer import analyze_url
 from modules.analyzer.dns_analyzer import analyze_dns
@@ -36,6 +38,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Cybersecurity assistant is online.\n\n"
         "Use /help to see available commands."
     )
+
+
+
+async def compare(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    comparison = compare_scans()
+
+    if comparison.get("status") != "success":
+        await update.message.reply_text(
+            comparison.get("message", "Comparison unavailable.")
+        )
+        return
+
+    analysis = analyze_scan_changes(comparison)
+
+    lines = [
+        "🛡️ OPENSHIELD AI",
+        "📊 SCAN COMPARISON",
+        "",
+        f"Current Risk: {comparison['current']['risk']} ({comparison['current']['score']}/100)",
+        f"Previous Risk: {comparison['previous']['risk']} ({comparison['previous']['score']}/100)",
+        f"Score Change: {comparison['score_change']:+}",
+        "",
+        "🧠 AI Analysis",
+        analysis,
+    ]
+
+    await update.message.reply_text("\n".join(lines))
 
 
 async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -558,6 +587,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("ask", ask))
+    app.add_handler(CommandHandler("compare", compare))
     app.add_handler(CommandHandler("about", about))
     app.add_handler(CommandHandler("security", security))
     app.add_handler(CommandHandler("analyze", analyze))
